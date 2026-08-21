@@ -39,7 +39,7 @@ export class WalletLedgerEntry {
 
   static create(props: CreateLedgerEntryProps): WalletLedgerEntry {
     if (props.money.currency !== props.balanceBefore.currency || props.money.currency !== props.balanceAfter.currency) {
-      throw new WalletCurrencyMismatchError('Todas as moedas devem ser da mesma unidade');
+      throw new WalletCurrencyMismatchError('Currencies across transaction and balance must match');
     }
 
     const entry = new WalletLedgerEntry(
@@ -54,7 +54,7 @@ export class WalletLedgerEntry {
     );
 
     if (!entry.isBalanced()) {
-      throw new DomainError('UNBALANCED_LEDGER_ENTRY', 'A entrada no ledger não está balanceada corretamente.');
+      throw new DomainError('UNBALANCED_LEDGER_ENTRY', 'The ledger entry is not mathematically balanced.');
     }
 
     return entry;

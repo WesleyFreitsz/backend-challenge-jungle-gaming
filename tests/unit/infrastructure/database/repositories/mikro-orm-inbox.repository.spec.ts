@@ -1,8 +1,8 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { MikroOrmInboxRepository } from "../../../../../src/infrastructure/database/repositories/mikro-orm-inbox.repository";
-import { InboxMessage } from "../../../../../src/domain/messaging/inbox-message";
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { MikroOrmInboxRepository } from '../../../../../src/infrastructure/database/repositories/mikro-orm-inbox.repository';
+import { InboxMessage } from '../../../../../src/domain/messaging/inbox-message';
 
-describe("MikroOrmInboxRepository", () => {
+describe('MikroOrmInboxRepository', () => {
   let repository: MikroOrmInboxRepository;
   let mockEm: any;
 
@@ -18,11 +18,11 @@ describe("MikroOrmInboxRepository", () => {
     repository = new MikroOrmInboxRepository(mockEm);
   });
 
-  it("deve persistir um novo inbox message", async () => {
+  it('should persist a new inbox message', async () => {
     const msg = InboxMessage.receive({
-      messageId: "msg-1",
-      consumerName: "consumer-1",
-      payloadHash: "hash",
+      messageId: 'msg-1',
+      consumerName: 'consumer-1',
+      payloadHash: 'hash',
       receivedAt: new Date(),
     });
 
@@ -32,11 +32,11 @@ describe("MikroOrmInboxRepository", () => {
     expect(mockEm.persist).toHaveBeenCalled();
   });
 
-  it("deve atualizar um inbox message", async () => {
+  it('should update an existing inbox message', async () => {
     const msg = InboxMessage.receive({
-      messageId: "msg-1",
-      consumerName: "consumer-1",
-      payloadHash: "hash",
+      messageId: 'msg-1',
+      consumerName: 'consumer-1',
+      payloadHash: 'hash',
       receivedAt: new Date(),
     });
     msg.markProcessed(new Date());

@@ -116,7 +116,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
     );
   });
 
-  it('deve rejeitar REFUND se a transação referenciada não for BET (ex: referenciando um WIN)', async () => {
+  it('should reject REFUND if referenced transaction is not a BET', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'refund-invalid-target',
@@ -127,14 +127,14 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
       gameId,
       kind: WagerTransactionKind.Refund,
       money: { amount: '150.00', currency: 'BRL' },
-      referenceExternalTransactionId: winTx.externalTransactionId, // Trying to refund a WIN!
+      referenceExternalTransactionId: winTx.externalTransactionId,
     });
 
     expect(result.status).toBe(WagerTransactionStatus.Rejected);
     expect(result.failureCode).toBe(FailureCode.RefundOnlyForBet);
   });
 
-  it('deve rejeitar REFUND/ROLLBACK se o valor for diferente da referência (ReversalAmountMismatch)', async () => {
+  it('should reject REFUND/ROLLBACK if reversal amount does not match reference', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'refund-wrong-amount',
@@ -144,7 +144,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
       roundId,
       gameId,
       kind: WagerTransactionKind.Refund,
-      money: { amount: '20.00', currency: 'BRL' }, // Bet was 50.00
+      money: { amount: '20.00', currency: 'BRL' },
       referenceExternalTransactionId: betTx.externalTransactionId,
     });
 
@@ -152,7 +152,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
     expect(result.failureCode).toBe(FailureCode.ReversalAmountMismatch);
   });
 
-  it('deve rejeitar REFUND se o playerId não bater com a referência (PlayerMismatch)', async () => {
+  it('should reject REFUND if playerId does not match reference', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'refund-diff-player',
@@ -170,7 +170,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
     expect(result.failureCode).toBe(FailureCode.PlayerMismatch);
   });
 
-  it('deve rejeitar REFUND se o roundId não bater com a referência (RoundMismatch)', async () => {
+  it('should reject REFUND if roundId does not match reference', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'refund-diff-round',
@@ -188,8 +188,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
     expect(result.failureCode).toBe(FailureCode.RoundMismatch);
   });
 
-  it('deve rejeitar ROLLBACK com REVERSAL_WOULD_CAUSE_NEGATIVE_BALANCE caso debite mais do que o saldo atual', async () => {
-    // Carteira tem 100 BRL. Tentamos fazer ROLLBACK de um WIN de 150 BRL (o que precisaria debitar 150 BRL da carteira).
+  it('should reject ROLLBACK with ReversalWouldCauseNegativeBalance if resulting debit exceeds current balance', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'rollback-win-overflow',
@@ -207,7 +206,7 @@ describe('Wager Reversals & Edge Cases Unit Tests', () => {
     expect(result.failureCode).toBe(FailureCode.ReversalWouldCauseNegativeBalance);
   });
 
-  it('deve colocar em PENDING_REFERENCE se a referência não existir ainda', async () => {
+  it('should transition to PENDING_REFERENCE if reference transaction does not exist yet', async () => {
     const result = await useCase.execute({
       providerId,
       externalTransactionId: 'refund-early',

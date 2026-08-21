@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: wagering_user
       POSTGRES_PASSWORD: wagering_secret_pass
     ports:
-      - "5433:5432"
+      - "${DATABASE_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -33,5 +33,31 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wagering-app
+    profiles: ["app", "full"]
+    environment:
+      PORT: 3000
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: wagering
+      DATABASE_USER: wagering_user
+      DATABASE_PASSWORD: wagering_secret_pass
+      AWS_SQS_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
 volumes:
   pgdata:
+

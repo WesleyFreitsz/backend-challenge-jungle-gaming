@@ -5,7 +5,7 @@ import { LedgerDirection } from '../../src/domain/wallet/ledger-direction.enum';
 import { DomainError } from '../../src/domain/common/domain-error';
 
 describe('WalletLedgerEntry', () => {
-  it('deve criar com uma entrada de DÉBITO válida (balanceBefore - money = balanceAfter)', () => {
+  it('should create a valid DEBIT ledger entry (balanceBefore - money = balanceAfter)', () => {
     const money = Money.from({ amount: '20.00', currency: 'BRL' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
     const balanceAfter = Money.from({ amount: '80.00', currency: 'BRL' });
@@ -26,7 +26,7 @@ describe('WalletLedgerEntry', () => {
     expect(entry.direction).toBe(LedgerDirection.Debit);
   });
 
-  it('deve criar com uma entrada de CRÉDITO válida (balanceBefore + money = balanceAfter)', () => {
+  it('should create a valid CREDIT ledger entry (balanceBefore + money = balanceAfter)', () => {
     const money = Money.from({ amount: '30.00', currency: 'BRL' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
     const balanceAfter = Money.from({ amount: '130.00', currency: 'BRL' });
@@ -45,10 +45,10 @@ describe('WalletLedgerEntry', () => {
     expect(entry.isBalanced()).toBe(true);
   });
 
-  it('deve rejeitar entradas desbalanceadas no DÉBITO', () => {
+  it('should reject unbalanced DEBIT ledger entries', () => {
     const money = Money.from({ amount: '20.00', currency: 'BRL' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
-    const balanceAfter = Money.from({ amount: '90.00', currency: 'BRL' }); // Errado, deveria ser 80
+    const balanceAfter = Money.from({ amount: '90.00', currency: 'BRL' }); // Incorrect, should be 80.00
 
     expect(() => {
       WalletLedgerEntry.create({
@@ -64,10 +64,10 @@ describe('WalletLedgerEntry', () => {
     }).toThrow(DomainError);
   });
 
-  it('deve rejeitar entradas desbalanceadas no CRÉDITO', () => {
+  it('should reject unbalanced CREDIT ledger entries', () => {
     const money = Money.from({ amount: '30.00', currency: 'BRL' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
-    const balanceAfter = Money.from({ amount: '120.00', currency: 'BRL' }); // Errado, deveria ser 130
+    const balanceAfter = Money.from({ amount: '120.00', currency: 'BRL' }); // Incorrect, should be 130.00
 
     expect(() => {
       WalletLedgerEntry.create({
@@ -83,7 +83,7 @@ describe('WalletLedgerEntry', () => {
     }).toThrow(DomainError);
   });
 
-  it('deve rejeitar divergência de moeda', () => {
+  it('should reject mismatched currency between balance and transaction money', () => {
     const money = Money.from({ amount: '20.00', currency: 'USD' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
     const balanceAfter = Money.from({ amount: '80.00', currency: 'BRL' });
@@ -102,10 +102,10 @@ describe('WalletLedgerEntry', () => {
     }).toThrow();
   });
 
-  it('deve reidratar a partir do estado sem revalidar (balanceAfter pode ser inválido, apenas reconstrói)', () => {
+  it('should rehydrate from raw state without revalidation', () => {
     const money = Money.from({ amount: '20.00', currency: 'BRL' });
     const balanceBefore = Money.from({ amount: '100.00', currency: 'BRL' });
-    const balanceAfter = Money.from({ amount: '999.00', currency: 'BRL' }); // inválido de propósito
+    const balanceAfter = Money.from({ amount: '999.00', currency: 'BRL' }); // Intentionally unbalanced for rehydration test
 
     const entry = WalletLedgerEntry.rehydrate({
       id: 'entry-6',

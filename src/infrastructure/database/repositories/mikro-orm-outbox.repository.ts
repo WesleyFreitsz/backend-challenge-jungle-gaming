@@ -40,7 +40,6 @@ export class MikroOrmOutboxRepository implements OutboxRepositoryPort {
     await this.em.flush();
   }
   async fetchDueBatch(batchSize: number, now: Date): Promise<OutboxMessage[]> {
-    const connection = this.em.getConnection();
     const query = `
       SELECT * FROM outbox_messages 
       WHERE published_at IS NULL 
@@ -49,9 +48,12 @@ export class MikroOrmOutboxRepository implements OutboxRepositoryPort {
       LIMIT ? 
       FOR UPDATE SKIP LOCKED
     `;
-    const results = await connection.execute(query, [now, batchSize]);
+    const executeFn = typeof this.em.execute === 'function'
+      ? this.em.execute.bind(this.em)
+      : this.em.getConnection().execute.bind(this.em.getConnection());
+    const results = await executeFn(query, [now, batchSize]);
 
-    // MikroORM connection.execute returns raw rows, map them to entities then domain
+    // MikroORM execute returns raw rows, map them to entities then domain
     const entities = results.map((row: any) =>
       this.em.map(OutboxMessageEntity, row),
     );

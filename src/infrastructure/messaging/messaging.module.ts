@@ -14,5 +14,11 @@ import { PendingReferenceWorker } from './pending-reference.worker';
     SqsConsumerWorker,
     PendingReferenceWorker,
   ],
+  exports: [
+    SqsPublisherService,
+    OutboxPublisherWorker,
+    SqsConsumerWorker,
+    PendingReferenceWorker,
+  ],
 })
 export class MessagingModule {}

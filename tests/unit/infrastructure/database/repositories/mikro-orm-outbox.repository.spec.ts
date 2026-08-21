@@ -22,7 +22,7 @@ describe('MikroOrmOutboxRepository', () => {
     repository = new MikroOrmOutboxRepository(mockEm);
   });
 
-  it('deve persistir um novo outbox message', async () => {
+  it('should persist a new outbox message', async () => {
     const msg = OutboxMessage.enqueue({
       eventId: 'evt-1',
       aggregateId: 'agg-1',
@@ -37,7 +37,7 @@ describe('MikroOrmOutboxRepository', () => {
     expect(mockEm.persist).toHaveBeenCalled();
   });
 
-  it('deve buscar mensagens pendentes com lock', async () => {
+  it('should fetch due batch with lock', async () => {
     const msg = OutboxMessage.enqueue({
       eventId: 'evt-1',
       aggregateId: 'agg-1',
@@ -46,7 +46,6 @@ describe('MikroOrmOutboxRepository', () => {
       toJSON: () => ({ foo: 'bar' }),
     });
     
-    // Simulate raw DB row mapping
     const rawRow = {
       id: msg.id,
       aggregateId: msg.aggregateId,

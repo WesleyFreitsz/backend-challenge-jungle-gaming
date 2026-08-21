@@ -73,18 +73,19 @@ export class ProcessWagerTransactionUseCase {
   async execute(command: ProcessWagerTransactionCommand): Promise<ProcessWagerTransactionResult> {
     const payloadHash = this.hasher.hashWagerPayload(command as unknown as Record<string, unknown>);
 
-    return this.uow.execute(async () => {
-      // 1. Idempotency Check by IdempotencyKey
-      const existingTx = await this.wagerRepository.findByIdempotencyKey(command.idempotencyKey);
-      if (existingTx) {
-        if (!existingTx.matchesPayload(payloadHash)) {
-          throw new DomainError('IDEMPOTENCY_CONFLICT', 'Idempotency key reused with different payload');
+    try {
+      return await this.uow.execute(async () => {
+        // 1. Idempotency Check by IdempotencyKey
+        const existingTx = await this.wagerRepository.findByIdempotencyKey(command.idempotencyKey);
+        if (existingTx) {
+          if (!existingTx.matchesPayload(payloadHash)) {
+            throw new DomainError('IDEMPOTENCY_CONFLICT', 'Idempotency key reused with different payload');
+          }
+          if (existingTx.isTerminal()) {
+            const wallet = await this.walletRepository.findById(existingTx.walletId);
+            return this.buildResult(existingTx, wallet?.balance, true);
+          }
         }
-        if (existingTx.isTerminal()) {
-          const wallet = await this.walletRepository.findById(existingTx.walletId);
-          return this.buildResult(existingTx, wallet?.balance, true);
-        }
-      }
 
       // 2. Duplicate Check by Provider + External ID
       const existingByProvider = await this.wagerRepository.findByProviderAndExternalId(
@@ -300,7 +301,27 @@ export class ProcessWagerTransactionUseCase {
         return this.buildResult(tx, wallet.balance, false);
       }
     });
+  } catch (error: any) {
+    // Handle concurrent unique constraint collision (code 23505 or duplicate key violation)
+    const isUniqueCollision =
+      error?.code === '23505' ||
+      error?.name === 'UniqueConstraintViolationException' ||
+      String(error?.message || '').includes('uq_wager_idempotency_key') ||
+      String(error?.message || '').includes('duplicate key value violates unique constraint');
+
+    if (isUniqueCollision) {
+      const committedTx = await this.wagerRepository.findByIdempotencyKey(command.idempotencyKey);
+      if (committedTx) {
+        if (!committedTx.matchesPayload(payloadHash)) {
+          throw new DomainError('IDEMPOTENCY_CONFLICT', 'Idempotency key reused with different payload');
+        }
+        const wallet = await this.walletRepository.findById(committedTx.walletId);
+        return this.buildResult(committedTx, wallet?.balance, true);
+      }
+    }
+    throw error;
   }
+}
 
   private async persistRejected(tx: WagerTransaction, isUpdate: boolean): Promise<void> {
     if (isUpdate) {

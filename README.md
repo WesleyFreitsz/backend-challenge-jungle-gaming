@@ -18,6 +18,7 @@
 
 ---
 
+
 ## 1. Visão Geral
 O **Distributed Wagering Processor** é um microserviço financeiro de alta confiabilidade projetado para processar operações de apostas (`BET`), premiações (`WIN`), perdas (`LOSS`), reembolsos (`REFUND`) e reversões (`ROLLBACK`).
 
@@ -100,19 +101,25 @@ bun run start:prod
 ## 5. Execução dos Testes
 
 ### 5.1 Testes Unitários
-Executa a suíte de testes de domínio, Value Objects, máquinas de estado e reversões:
+Valida Value Objects, invariantes de domínio, máquina de estados de transações e regras contábeis:
 ```bash
 bun run test:unit
 ```
 
-### 5.2 Testes de Concorrência (Real PostgreSQL Concurrency)
-Valida a proteção contra *lost updates*, contenção de saldo e concorrência massiva:
+### 5.2 Testes de Integração (PostgreSQL & SQS Reais)
+Valida atomicidade do banco, triggers de imutabilidade do ledger, deduplicação no Inbox, `SELECT FOR UPDATE SKIP LOCKED` no Outbox e TTL de operações fora de ordem:
+```bash
+bun run test:int
+```
+
+### 5.3 Testes de Concorrência e Multi-Instâncias
+Valida contenção de saldo, 50x a mesma aposta em paralelo com replay idempotente e múltiplas instâncias simultâneas:
 ```bash
 bun run test:concurrency
 ```
 
-### 5.3 Teste de Carga e Benchmark
-Executa um teste de carga com centenas de operações paralelas e validação contábil no final:
+### 5.4 Teste de Carga e Benchmark
+Executa um teste de carga com centenas de operações paralelas e reconciliação contábil 100% balanceada:
 ```bash
 # Certifique-se de que a aplicação está rodando (bun run start)
 bun run test:load
@@ -193,3 +200,4 @@ GET /providers/:providerId/wagering/transactions/:externalTransactionId
   - `GET /health/ready`: Readiness probe verificando PostgreSQL e SQS (HTTP 200 / 503).
 - **Métricas Prometheus:**
   - `GET /metrics`: Exposição de métricas para Prometheus/Grafana (`wagering_transactions_total`, `wagering_idempotency_conflicts_total`, `wagering_reversals_total`, `wagering_processing_duration_seconds`, `wagering_outbox_lag`).
+

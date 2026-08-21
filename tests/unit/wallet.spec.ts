@@ -3,10 +3,9 @@ import { Wallet } from '../../src/domain/wallet/wallet';
 import { Money } from '../../src/domain/money/money';
 import { InsufficientFundsError } from '../../src/domain/wallet/exceptions/insufficient-funds.error';
 import { WalletCurrencyMismatchError } from '../../src/domain/wallet/exceptions/wallet-currency-mismatch.error';
-import { DomainError } from '../../src/domain/common/domain-error';
 
-describe('Wallet', () => {
-  it('deve abrir uma carteira com saldo inicial não negativo', () => {
+describe('Wallet Aggregate', () => {
+  it('should open a wallet with valid non-negative initial balance', () => {
     const initialBalance = Money.from({ amount: '100.00', currency: 'BRL' });
     const wallet = Wallet.open({ id: 'w-1', playerId: 'p-1', initialBalance });
 
@@ -19,7 +18,7 @@ describe('Wallet', () => {
     expect(wallet.updatedAt).toBeInstanceOf(Date);
   });
 
-  it('deve abrir uma carteira com saldo zero', () => {
+  it('should open a wallet with zero initial balance', () => {
     const initialBalance = Money.zero('USD');
     const wallet = Wallet.open({ id: 'w-2', playerId: 'p-1', initialBalance });
 
@@ -27,14 +26,14 @@ describe('Wallet', () => {
     expect(wallet.currency).toBe('USD');
   });
 
-  it('deve rejeitar débito quando não há fundos suficientes (InsufficientFundsError)', () => {
+  it('should reject debit when balance is insufficient', () => {
     const wallet = Wallet.open({ id: 'w-3', playerId: 'p-1', initialBalance: Money.from({ amount: '50.00', currency: 'BRL' }) });
     const debitAmount = Money.from({ amount: '60.00', currency: 'BRL' });
 
     expect(() => wallet.debit(debitAmount)).toThrow(InsufficientFundsError);
   });
 
-  it('deve subtrair do saldo corretamente no débito e incrementar versão', () => {
+  it('should subtract debit amount and increment aggregate version', () => {
     const wallet = Wallet.open({ id: 'w-4', playerId: 'p-1', initialBalance: Money.from({ amount: '100.00', currency: 'BRL' }) });
     const debitAmount = Money.from({ amount: '40.00', currency: 'BRL' });
     
@@ -44,7 +43,7 @@ describe('Wallet', () => {
     expect(wallet.version).toBe(2);
   });
 
-  it('deve debitar o valor exato do saldo (deixa zerado)', () => {
+  it('should allow debiting exact balance leaving zero', () => {
     const wallet = Wallet.open({ id: 'w-5', playerId: 'p-1', initialBalance: Money.from({ amount: '10.00', currency: 'BRL' }) });
     const debitAmount = Money.from({ amount: '10.00', currency: 'BRL' });
 
@@ -54,7 +53,7 @@ describe('Wallet', () => {
     expect(wallet.version).toBe(2);
   });
 
-  it('deve incrementar saldo corretamente no crédito e incrementar versão', () => {
+  it('should add credit amount and increment aggregate version', () => {
     const wallet = Wallet.open({ id: 'w-6', playerId: 'p-1', initialBalance: Money.from({ amount: '100.00', currency: 'BRL' }) });
     const creditAmount = Money.from({ amount: '40.00', currency: 'BRL' });
     
@@ -64,21 +63,21 @@ describe('Wallet', () => {
     expect(wallet.version).toBe(2);
   });
 
-  it('deve lançar WalletCurrencyMismatchError no crédito com moeda divergente', () => {
+  it('should throw WalletCurrencyMismatchError on credit with mismatched currency', () => {
     const wallet = Wallet.open({ id: 'w-7', playerId: 'p-1', initialBalance: Money.from({ amount: '100.00', currency: 'BRL' }) });
     const creditAmount = Money.from({ amount: '40.00', currency: 'USD' });
     
     expect(() => wallet.credit(creditAmount)).toThrow(WalletCurrencyMismatchError);
   });
 
-  it('deve lançar WalletCurrencyMismatchError no débito com moeda divergente', () => {
+  it('should throw WalletCurrencyMismatchError on debit with mismatched currency', () => {
     const wallet = Wallet.open({ id: 'w-8', playerId: 'p-1', initialBalance: Money.from({ amount: '100.00', currency: 'BRL' }) });
     const debitAmount = Money.from({ amount: '40.00', currency: 'USD' });
     
     expect(() => wallet.debit(debitAmount)).toThrow(WalletCurrencyMismatchError);
   });
 
-  it('deve reidratar preservando o estado e versão sem revalidar', () => {
+  it('should rehydrate preserving state and version without revalidation', () => {
     const now = new Date();
     const wallet = Wallet.rehydrate({
       id: 'w-9',
@@ -96,7 +95,7 @@ describe('Wallet', () => {
     expect(wallet.balance.equals(Money.from({ amount: '25.00', currency: 'BRL' }))).toBe(true);
   });
 
-  it('Cenário Concorrente (Simulado): debita duas vezes quando há saldo pra uma só, primeira passa e segunda falha', () => {
+  it('should handle sequential debits correctly when second exceeds remaining funds', () => {
     const wallet = Wallet.open({ id: 'w-10', playerId: 'p-1', initialBalance: Money.from({ amount: '100.00', currency: 'BRL' }) });
     
     wallet.debit(Money.from({ amount: '80.00', currency: 'BRL' }));
@@ -104,6 +103,6 @@ describe('Wallet', () => {
     expect(wallet.version).toBe(2);
 
     expect(() => wallet.debit(Money.from({ amount: '80.00', currency: 'BRL' }))).toThrow(InsufficientFundsError);
-    expect(wallet.version).toBe(2); // Versão não incrementa em falha
+    expect(wallet.version).toBe(2);
   });
 });

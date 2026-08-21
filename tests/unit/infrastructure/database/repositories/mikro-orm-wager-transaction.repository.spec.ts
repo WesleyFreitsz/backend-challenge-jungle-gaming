@@ -21,7 +21,7 @@ describe('MikroOrmWagerTransactionRepository', () => {
     repository = new MikroOrmWagerTransactionRepository(mockEm);
   });
 
-  it('deve persistir um novo wager transaction', async () => {
+  it('should persist a new wager transaction', async () => {
     const tx = WagerTransaction.create({
       id: 'tx-1',
       providerId: 'provider-1',
@@ -42,7 +42,7 @@ describe('MikroOrmWagerTransactionRepository', () => {
     expect(mockEm.persist).toHaveBeenCalled();
   });
 
-  it('deve atualizar um wager transaction existente', async () => {
+  it('should update an existing wager transaction', async () => {
     const tx = WagerTransaction.create({
       id: 'tx-1',
       providerId: 'provider-1',

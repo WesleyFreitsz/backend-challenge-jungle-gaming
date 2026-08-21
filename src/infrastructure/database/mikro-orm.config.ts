@@ -17,7 +17,7 @@ export default defineConfig({
   ],
   dbName: process.env.DATABASE_NAME || "wagering",
   host: process.env.DATABASE_HOST || "localhost",
-  port: Number(process.env.DATABASE_PORT) || 5432,
+  port: Number(process.env.DATABASE_PORT) || 5433,
   user: process.env.DATABASE_USER || "wagering_user",
   password: process.env.DATABASE_PASSWORD || "wagering_secret_pass",
   allowGlobalContext: true,
